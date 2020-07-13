@@ -408,12 +408,19 @@ It appears that adding analogous perspective taking to imagine-self instructions
 ## Descriptives: Condition predicting perspective taking
 
 ```{r pt by condition}
-data_clean %>% 
+pt_cond <- data_clean %>% 
   select(ID, condition, pt_mancheck) %>% 
   na.omit() %>% 
   group_by(condition) %>% 
   summarize(mean = mean(pt_mancheck),
-            sd = sd(pt_mancheck))
+            sd = sd(pt_mancheck),
+            se = sd(pt_mancheck)/sqrt(length(pt_mancheck))) %>% 
+  mutate(condition = recode(condition,
+                            "'analog_forcontrol' = 'Analog + Control';
+                            'analog_forself' = 'Analog + Imagine Self';
+                            'control_only' = 'Control Only';
+                            'imagine_self_only' = 'Imagine Self Only'"))
+pt_cond
 ```
 
 ## Analysis
@@ -429,3 +436,39 @@ pt_model <- lm(pt_mancheck ~ ident_c*condition*cand_pref*perceived_polar_c,
 tab_model(pt_model,
           title = "Perspective taking model")
 ```
+
+## Plots
+
+```{r condition main predicting pt}
+ggplot(pt_cond, aes(condition, mean, fill = condition)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(title = "Self-reported perspective taking predicted by perspective taking instructions",
+       x = "Instructions",
+       y = "Self-reported perspective taking") +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = .2,
+                position = position_dodge(.9)) +
+  scale_fill_viridis_d()
+```
+
+Results indicate that people in the imagine-self conditions report taking the perspective of their out-group target less than those who are in the control group, regardless of analogous instructions. Possibly a back firing effect due to threat? The more you are told to consider the perspective of an out-group target, the less you want to.
+
+```{r ident x cand_pref predicting pt}
+ptxidentxcand <- data_clean %>% 
+  select(ident_c, pt_mancheck, cand_pref, ID) %>% 
+  mutate(cand_pref = recode(cand_pref, "'0.5' = 'Clinton'; '-0.5' = 'Trump'"))
+
+ggplot(ptxidentxcand, aes(ident_c, pt_mancheck, group = cand_pref, color = cand_pref)) +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+   scale_color_manual("Candidate",
+                     values = c('#404788FF',
+                               '#55C667FF')) +
+  theme_minimal(base_size = 13) +
+  labs(title = "In-group identification and candidate predicting self-reported perspective taking",
+       x = "In-group identification",
+       y = "Self-reported perspective taking")
+```
+
+As in-group identification increases, Trump supporters report taking the perspective of the out-group target more, while Clinton supporters report doing so less.
