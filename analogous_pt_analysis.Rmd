@@ -52,7 +52,7 @@ trace(grDevices:::png, quote({
 data <- import("analog_pt_combined_ptfiltered.xlsx")
 ```
 
-```{r data import}
+```{r data import, include = FALSE}
 # Reverse coding
 data[,c("bfi_self_quiet", "bfi_self_rude", 
                  "bfi_self_disorganized", "bfi_self_tasks",
@@ -104,13 +104,175 @@ data_clean <- data %>%
            mean(perceived_polar, na.rm = TRUE)) %>% 
 # Removing people who responded "neither" because only want in and out-group for this analysis, this was an error in data collection to have a third option
   filter(cand_pref != 3) %>% 
+  #effects coding candidate; Clinton = .5, Trump = -.5
+  mutate(cand_pref = recode(cand_pref, "'1' = '.5'; '2' = '-.5'")) %>% 
   #making demographics factors or numeric
   mutate(gender = as.factor(gender),
          race = as.factor(race),
          age = as.numeric(age)) %>% 
   #labeling gender and race
-  mutate(gender = recode(gender, "'1' = 'Male';'2' = 'Female'; c('3','4','5')  = 'Other'"),
+  mutate(gender = recode(gender, "'1' = 'Female';'2' = 'Male'; c('3','4','5')  = 'Other'"),
          race = recode(race, "'1' = 'American Indian or Alaska Native'; '8' = 'Asian'; '9' = 'Black';
                        '10' = 'Latinx'; '12' = 'Middle Eastern'; '14' = 'Hawaiian/Pacific Islander'; '16' = 'White'; c('17', '18') = 'Other'"))
+```
 
+# Demographics
+
+## Participant number
+
+```{r participants number}
+data_clean %>% 
+  select(ID) %>% 
+  unique() %>% 
+  nrow()
+```
+
+## Participants per condition
+
+```{r participants per condition}
+data_clean %>% 
+  select(ID, condition) %>% 
+  unique() %>% 
+  group_by(condition) %>% 
+  count()
+```
+
+## Gender
+
+```{r gender}
+data_clean %>% 
+  select(ID, gender) %>% 
+  unique() %>% 
+  group_by(gender) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(n_total = sum(n),
+         percent = (n/n_total)*100)
+```
+
+## Race
+
+```{r race}
+data_clean %>% 
+  select(ID, race) %>% 
+  unique() %>% 
+  group_by(race) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(n_total = sum(n),
+         percent = (n/n_total)*100)
+```
+
+## Age
+
+```{r age}
+data_clean %>% 
+  select(ID, age) %>% 
+  na.omit() %>% 
+  summarize(mean = mean(age),
+            sd = sd(age))
+```
+
+## Candidate preference percentage
+
+```{r}
+data_clean %>% 
+  mutate(cand_pref = as.factor(cand_pref)) %>% 
+  mutate(cand_pref = recode(cand_pref, "'0.5' = 'Clinton'; '-0.5' = 'Trump'")) %>% 
+  select(ID, cand_pref) %>% 
+  na.omit() %>% 
+  unique() %>% 
+  group_by(cand_pref) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(n_total = sum(n),
+         percent = (n/n_total)*100)
+```
+
+# Overall descriptives
+
+```{r proj descriptives}
+describe(data_clean)
+```
+
+# Projection Model
+
+## Descriptives predicting projection
+
+### Histogram of in-group identification
+
+```{r hist identification}
+hist_ident <- data_clean %>% 
+  select(ID, ident) %>% 
+  unique()
+hist(hist_ident$ident)
+```
+
+### Histogram of perceived polarization
+
+```{r perceived polarization distribution}
+hist_polar <- data_clean %>% 
+  select(ID, perceived_polar) %>% 
+  unique()
+hist(hist_polar$perceived_polar)
+```
+
+### Mean BFI scores for self by condition
+
+```{r BFI self}
+data_clean %>% 
+  select(ID, condition, self) %>% 
+  na.omit() %>% 
+  group_by(condition) %>% 
+  summarize(mean = mean(self),
+            sd = sd(self))
+```
+
+### Mean BFI scores for target by condition
+
+```{r BFI targ}
+data_clean %>% 
+  select(ID, condition, targ) %>% 
+  na.omit() %>% 
+  group_by(condition) %>% 
+  summarize(mean = mean(targ),
+            sd = sd(targ))
+```
+
+## Analysis
+
+```{r projection analysis}
+#Adding contrast codes for condition
+analog_v_non <- c(-1, -1, 1, 1) 
+analogc_v_analogs <- c(-1, 1, 0, 0)  
+con_v_self <- c(0, 0, 1, -1) 
+ConCodes <- cbind(analog_v_non, analogc_v_analogs, con_v_self)
+contrasts(data_clean$condition) <- ConCodes
+contrasts(data_clean$condition)
+
+proj_model <- lmer(targ ~ self_c*ident_c*condition*cand_pref*perceived_polar_c + (self_c|ID), 
+                            data = data_clean)
+
+tab_model(proj_model,
+          title = "Projection model")
+```
+
+## Plots
+
+# Perspective Taking Model
+
+## Descriptives
+
+## Analysis
+
+```{r pt model}
+pt_data <- data_clean %>% select(c(ID, pt_mancheck, ident_c, condition, cand_pref, perceived_polar_c)) %>% 
+  unique() %>% 
+  na.omit()
+
+pt_model <- lm(pt_mancheck ~ ident_c*condition*cand_pref*perceived_polar_c, 
+                            data = pt_data)
+
+tab_model(pt_model,
+          title = "Perspective taking model")
 ```
