@@ -1,0 +1,113 @@
+---
+title: "Analogous PT analysis"
+author: "Kathryn Denning"
+date: "7/6/2020"
+output: 
+  html_document:
+    code_folding: "hide"
+    toc: true
+    toc_float: true
+    dev: png
+  pdf_document:
+    dev: cairo_pdf
+    latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r set-up, include = FALSE}
+#loading packages
+library(foreign)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(car)
+library(haven)
+library(psych)
+library(lmerTest)
+library(sjPlot)
+library(reshape2)
+library(data.table)
+library(emmeans)
+library(effects)
+library(Cairo)
+library(tinytex)
+library(rio)
+
+#making it round to three decimal places
+options(scipen = 999)
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+knitr::opts_knit$set(dev.args = list(type = "cairo"))
+
+trace(grDevices:::png, quote({
+  if (missing(type) && missing(antialias)) {
+    type <- "cairo-png"
+    antialias <- "subpixel"
+  }
+}), print = FALSE)
+
+data <- import("analog_pt_combined_ptfiltered.xlsx")
+```
+
+```{r data import}
+# Reverse coding
+data[,c("bfi_self_quiet", "bfi_self_rude", 
+                 "bfi_self_disorganized", "bfi_self_tasks",
+                 "bfi_self_stable", "bfi_self_abstract",
+                 "bfi_self_risks", "bfi_self_uses",
+                 "bfi_targ_quiet", "bfi_targ_rude",
+                 "bfi_targ_disorganized",
+                 "bfi_targ_tasks", "bfi_targ_stable",
+                 "bfi_targ_abstract", "bfi_targ_risks",
+                 "bfi_targ_uses")] <- lapply(data[,c("bfi_self_quiet", "bfi_self_rude", 
+                 "bfi_self_disorganized", "bfi_self_tasks",
+                 "bfi_self_stable", "bfi_self_abstract",
+                 "bfi_self_risks", "bfi_self_uses",
+                 "bfi_targ_quiet", "bfi_targ_rude",
+                 "bfi_targ_disorganized",
+                 "bfi_targ_tasks", "bfi_targ_stable",
+                 "bfi_targ_abstract", "bfi_targ_risks",
+                 "bfi_targ_uses")], function(x) 
+                 recode(x,"'1'=5;
+                           '2'=4;
+                           '4'=2;
+                           '5'=1"))
+
+# Cleaning and putting data in long-format
+data_clean <- data %>% 
+  mutate(ID = row_number()) %>% 
+  # Dropping demographic open-ended questions
+  select(-c(gender_write, race_write)) %>% 
+  # Putting responses for personality items into long format for participant and target
+  pivot_longer(c(bfi_self_quiet:bfi_self_rules, 
+           bfi_targ_quiet:bfi_targ_rules),
+           names_sep = "_",
+           names_to = c("drop1", "bfi_type", "bfi2xsh_qtype")) %>% 
+  pivot_wider(names_from = bfi_type, values_from = value) %>% 
+  # getting a condition variable
+  pivot_longer(c(control_only, imagine_self_only, analog_forcontrol, analog_forself),
+               names_to = "condition") %>% 
+  mutate(condition = as.factor(condition)) %>% 
+  select(-c(control_afteranalog, imagine_self_afteranalog, drop1, value)) %>% 
+  # Making a variable for perceived polarization
+  mutate(perceived_polar = abs(polar_liberal-polar_cons)) %>% 
+  # Mean centering continuous predictors
+  mutate(self_c = self - mean(self, na.rm = TRUE),
+         ident_c = ident - mean(ident, na.rm = TRUE),
+         perceived_polar_c = perceived_polar - 
+           mean(perceived_polar, na.rm = TRUE)) %>% 
+# Removing people who responded "neither" because only want in and out-group for this analysis, this was an error in data collection to have a third option
+  filter(cand_pref != 3) %>% 
+  #making demographics factors or numeric
+  mutate(gender = as.factor(gender),
+         race = as.factor(race),
+         age = as.numeric(age)) %>% 
+  #labeling gender and race
+  mutate(gender = recode(gender, "'1' = 'Male';'2' = 'Female'; c('3','4','5')  = 'Other'"),
+         race = recode(race, "'1' = 'American Indian or Alaska Native'; '8' = 'Asian'; '9' = 'Black';
+                       '10' = 'Latinx'; '12' = 'Middle Eastern'; '14' = 'Hawaiian/Pacific Islander'; '16' = 'White'; c('17', '18') = 'Other'"))
+
+```
