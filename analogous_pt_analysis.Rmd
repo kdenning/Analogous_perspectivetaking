@@ -195,11 +195,7 @@ data_clean %>%
 describe(data_clean)
 ```
 
-# Projection Model
-
-## Descriptives predicting projection
-
-### Histogram of in-group identification
+## Histogram of in-group identification
 
 ```{r hist identification}
 hist_ident <- data_clean %>% 
@@ -208,7 +204,7 @@ hist_ident <- data_clean %>%
 hist(hist_ident$ident)
 ```
 
-### Histogram of perceived polarization
+## Histogram of perceived polarization
 
 ```{r perceived polarization distribution}
 hist_polar <- data_clean %>% 
@@ -216,6 +212,10 @@ hist_polar <- data_clean %>%
   unique()
 hist(hist_polar$perceived_polar)
 ```
+
+# Projection Model
+
+## Descriptives: Condition predicting projection
 
 ### Mean BFI scores for self by condition
 
@@ -259,9 +259,162 @@ tab_model(proj_model,
 
 ## Plots
 
+```{r main effect identification}
+#Getting stats for plot
+describe(data_clean$ident_c)
+
+proj_ident <- as_tibble(effect(term = "self_c:ident_c", 
+                                 xlevels = list(ident_c = c(-0.95, 0, 0.95)),
+                                 mod = proj_model), na.rm = TRUE)
+
+proj_ident$Identification <-as.factor(proj_ident$ident_c)
+
+# Color plot for conference presentation
+ggplot(proj_ident, aes(self_c, fit, color = Identification)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              size = 1.25, 
+              alpha = .3,
+              aes(color = Identification)) +
+  scale_color_manual(breaks = c(-0.95, 0, 0.95), 
+                     labels = c ("Weak \n(1 SD below)", 
+                                  "Average", 
+                                  "High \n(1 SD above)"),
+                     values = c('#404788FF',
+                               '#55C667FF',
+                               '#FDE725FF')) +
+  theme_minimal(base_size = 13) +
+  labs(title = "In-group identification predicting projection",
+       x = "Personality responses for self",
+       y = "Personality responses for target") +
+  ylim(2,4)
+```
+
+No one is projecting in this sample... As in-group identification increases, people go from not projecting to their out-group to counter projecting.
+
+```{r main effect polarization}
+#Getting stats for plot
+describe(data_clean$perceived_polar_c)
+
+proj_polar <- as_tibble(effect(term = "self_c:perceived_polar_c", 
+                                 xlevels = list(perceived_polar_c = c(-1.8, 0, 1.8)),
+                                 mod = proj_model), na.rm = TRUE)
+
+proj_polar$Polarization <-as.factor(proj_polar$perceived_polar_c)
+
+# Color plot for conference presentation
+ggplot(proj_polar, aes(self_c, fit, color = Polarization)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              size = 1.25, 
+              alpha = .3,
+              aes(color = Polarization)) +
+  scale_color_manual(breaks = c(-1.8, 0, 1.8), 
+                     labels = c ("Low \n(1 SD below)", 
+                                  "Average", 
+                                  "High \n(1 SD above)"),
+                     values = c('#404788FF',
+                               '#55C667FF',
+                               '#FDE725FF')) +
+  theme_minimal(base_size = 13) +
+  labs(title = "Perceived polarization predicting projection",
+       x = "Personality responses for self",
+       y = "Personality responses for target") +
+  ylim(2,4)
+```
+
+People who don't perceive polarization do not project. As perceived polarization increases, counter projection increases.
+
+```{r identification by candidate pref}
+#Getting stats for plot
+
+proj_identxcand <- as_tibble(effect(term = "self_c:ident_c:cand_pref", 
+                                 xlevels = list(ident_c = c(-0.95, 0, 0.95),
+                                                cand_pref = c("0.5", "-0.5")),
+                                 mod = proj_model), na.rm = TRUE)
+
+proj_identxcand$Identification <-as.factor(proj_identxcand$ident_c)
+proj_identxcand$Candidate <-as.factor(proj_identxcand$cand_pref)
+
+ident_label <- c("-0.95" = "Low identification \n (1 SD below)", 
+                 "0" = "Average identification",
+                 "0.95" = "High identificatiion \n(1 SD above)")
+
+# Color plot for conference presentation
+ggplot(proj_identxcand, aes(self_c, fit, color = Candidate)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              size = 1.25, 
+              alpha = .3,
+              aes(color = Candidate)) +
+  facet_wrap(~Identification, labeller = 
+               labeller(Identification = ident_label)) +
+  scale_color_manual(breaks = c(-0.5, 0.5), 
+                     labels = c ("Clinton", 
+                                  "Trump"),
+                     values = c('#404788FF',
+                               '#55C667FF')) +
+  theme_minimal(base_size = 13) +
+  labs(title = "In-group identification and candidate predicting projection",
+       x = "Personality responses for self",
+       y = "Personality responses for target") +
+  ylim(2,4)
+```
+
+Low identifying Clinton supporters project normally. However, as in-group identification increases, projection decreases and ultimately becomes counter projection. Trump supporters counter project to a similar degree regardless of identification. 
+
+
+```{r candidate pref by pt}
+#Getting stats for plot
+proj_candxcond <- as_tibble(effect(term = "self_c:condition:cand_pref", 
+                                 xlevels = list(cand_pref = c("0.5", "-0.5")),
+                                 mod = proj_model), na.rm = TRUE)
+
+proj_candxcond$Candidate <-as.factor(proj_candxcond$cand_pref)
+
+cand_label <- c("-0.5" = "Trump", 
+                 "0.5" = "Clinton")
+
+
+ggplot(proj_candxcond, aes(self_c, fit, color = condition)) +
+  geom_smooth(method = "lm", 
+              se = FALSE,
+              size = 1.25, 
+              alpha = .3,
+              aes(color = condition)) +
+  facet_wrap(~Candidate, labeller = 
+               labeller(Candidate = cand_label)) +
+  scale_color_manual("Condition",
+                     labels = c("Analog + Control",
+                                 "Analog + Imagine Self",
+                                 "Control Only",
+                                 "Imagine Self Only"),
+                     values = c('#404788FF',
+                               '#238A8DFF',
+                               '#55C667FF',
+                               '#FDE725FF')) +
+  theme_minimal(base_size = 13) +
+  labs(title = "PT condition and candidate predicting projection",
+       subtitle = "Comparison between analogous versus non-analogous is significant",
+       x = "Personality responses for self",
+       y = "Personality responses for target") +
+  ylim(2,4)
+```
+
+It appears that adding analogous perspective taking to imagine-self instructions leads Trump supporters to counter project more than in the imagine self only condition as well as more than Clinton supporters in the analogous + imagine self condition. Interestingly, Trump supporters positively projected in the control only condition, while that is the condition that Clinton supporters counter projected the least in. Adding analogous instructions to control instructions for Trump supporters then lead to counter projection similiar to the imagine self only condition. Both the ananlogous conditions lead to similiar counter projection for Clinton supporters, while Clinton supporters counter projected the most in the imagine self only condition.
+
 # Perspective Taking Model
 
-## Descriptives
+## Descriptives: Condition predicting perspective taking
+
+```{r pt by condition}
+data_clean %>% 
+  select(ID, condition, pt_mancheck) %>% 
+  na.omit() %>% 
+  group_by(condition) %>% 
+  summarize(mean = mean(pt_mancheck),
+            sd = sd(pt_mancheck))
+```
 
 ## Analysis
 
