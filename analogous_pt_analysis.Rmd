@@ -91,7 +91,10 @@ data_clean <- data %>%
   pivot_longer(c(control_only, imagine_self_only, analog_forcontrol, analog_forself),
                names_to = "condition") %>% 
   mutate(condition = as.factor(condition)) %>% 
-  select(-c(control_afteranalog, imagine_self_afteranalog, drop1, value)) %>% 
+  select(-c(control_afteranalog, imagine_self_afteranalog, drop1)) %>% 
+  na.omit() %>% 
+  select(-value) %>% 
+  unique() %>% 
   # Making a variable for perceived polarization
   mutate(perceived_polar = abs(polar_liberal-polar_cons)) %>% 
   # Mean centering continuous predictors
