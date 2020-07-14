@@ -241,6 +241,8 @@ data_clean %>%
 
 ## Analysis
 
+### Contrasts
+
 ```{r projection analysis}
 #Adding contrast codes for condition
 analog_v_non <- c(-1, -1, 1, 1) 
@@ -261,7 +263,7 @@ tab_model(proj_model,
 
 ```{r main effect identification}
 #Getting stats for plot
-describe(data_clean$ident_c)
+#describe(data_clean$ident_c)
 
 proj_ident <- as_tibble(effect(term = "self_c:ident_c", 
                                  xlevels = list(ident_c = c(-0.95, 0, 0.95)),
@@ -294,7 +296,7 @@ No one is projecting in this sample... As in-group identification increases, peo
 
 ```{r main effect polarization}
 #Getting stats for plot
-describe(data_clean$perceived_polar_c)
+#describe(data_clean$perceived_polar_c)
 
 proj_polar <- as_tibble(effect(term = "self_c:perceived_polar_c", 
                                  xlevels = list(perceived_polar_c = c(-1.8, 0, 1.8)),
@@ -401,7 +403,24 @@ ggplot(proj_candxcond, aes(self_c, fit, color = condition)) +
   ylim(2,4)
 ```
 
-It appears that adding analogous perspective taking to imagine-self instructions leads Trump supporters to counter project more than in the imagine self only condition as well as more than Clinton supporters in the analogous + imagine self condition. Interestingly, Trump supporters positively projected in the control only condition, while that is the condition that Clinton supporters counter projected the least in. Adding analogous instructions to control instructions for Trump supporters then lead to counter projection similiar to the imagine self only condition. Both the ananlogous conditions lead to similiar counter projection for Clinton supporters, while Clinton supporters counter projected the most in the imagine self only condition.
+It appears that adding analogous perspective taking to imagine-self instructions leads Trump supporters to counter project more than in the imagine self only condition as well as more than Clinton supporters in the analogous + imagine self condition. Interestingly, Trump supporters positively projected in the control only condition, while that is the condition that Clinton supporters counter projected the least in. Adding analogous instructions to control instructions for Trump supporters then lead to counter projection similar to the imagine self only condition. Both the analogous conditions lead to similiar counter projection for Clinton supporters, while Clinton supporters counter projected the most in the imagine self only condition.
+
+## Summary in relation to predictions
+
+* Effects we predicted and found:
+  + Main effect of identification: We correctly said that as in-group identification increases, projection would decrease. However, we only expected counter projection among high identifiers, and participants are only counter projecting.
+  + Candidate by condition: We expected Trump supporters to project positively, but more so in the analogous instruction conditions. We did find that Trump supporters projected positively in the analogous instruction conditions, but we actually found counter projection in the non-analogous conditions. We had expected Clinton supporters would positively project in the analogous conditions, while counter projecting in non-analogous conditions; Instead, we found counter projection in all conditions, with the most counter projection occurring in the control conditions instead of the imagine-self conditions regardless of analogous instructions.
+  
+* Significant effects that we did not predict:
+  + Main effect of perceived polarization: We did not predict a main effect of perceived polarization as we did not find it in our previous study. Instead, results indicated a significant effect, where people who perceived low polarization did not project and, as perceived polarization increased, counter projection increased.
+  + Interaction of identification and candidate preference: We did not expect this to occur without perspective taking condition. Interestingly, it does not correspond to previous results we have found, as Trump supporters are always counter projecting regardless of identification, while it is Clinton supporters who project positively at low identification and exhibit counter projection increasing as identification increases.
+  
+* Effects we predicted and did not find:
+  + Main effect of condition
+  + Main effect of candidate preference
+  + Interaction of condition by identification
+  + Interaction of condition by perceived polarization
+  + None of the higher level cell predictions were correct either
 
 # Perspective Taking Model
 
@@ -472,3 +491,13 @@ ggplot(ptxidentxcand, aes(ident_c, pt_mancheck, group = cand_pref, color = cand_
 ```
 
 As in-group identification increases, Trump supporters report taking the perspective of the out-group target more, while Clinton supporters report doing so less.
+
+## Summary in relation to predictions
+
+* Effects we predicted and found:
+  + Main effect condition: Though we predicted a main effect, we expected higher self-report perspective taking in analogous conditions in comparison to non-analogous conditions, but actually found higher perspective taking in control conditions instead of imagine self conditions regardless of analogous instructions.
+
+* Significant effects not predicted:
+  + Interaction of identification by candidate: Trump supporters reported taking the perspective of the target more as identification increased, while Clinton supporters reported taking the perspective of the target less as identification increased.
+  
+* The predicted main effects of identification and perceived polarization were not significant.
